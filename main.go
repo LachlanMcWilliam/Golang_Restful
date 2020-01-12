@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"strconv"
 
@@ -26,6 +26,9 @@ type Author struct {
 
 // Init books var as slice Book of structs
 var books []Book
+
+//Init the id tracker variable
+var lastID string
 
 // Get all books
 func getBooks(w http.ResponseWriter, r *http.Request) {
@@ -52,9 +55,14 @@ func createBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var book Book
 	_ = json.NewDecoder(r.Body).Decode(&book)
-	book.ID = strconv.Itoa(rand.Intn(100000)) //THIS IS FOR EXAMPLE DO NOT DO THIS!!!!
-	books = append(books, book)
-	json.NewEncoder(w).Encode(book)
+	lastIDInt, err := strconv.Atoi(lastID)
+	if err == nil {
+		id := lastIDInt + 1
+		lastID = strconv.Itoa(id)
+		book.ID = lastID
+		books = append(books, book)
+		json.NewEncoder(w).Encode(book)
+	}
 }
 
 // Update book
@@ -93,6 +101,9 @@ func main() {
 	books = append(books, Book{ID: "1", Isbn: "9780854566242", Title: "War and Peace", Author: &Author{Firstname: "Leo", Lastname: "Tolstoy"}})
 	books = append(books, Book{ID: "2", Isbn: "9788932404493", Title: "Pride and Prejudice", Author: &Author{Firstname: "Jane", Lastname: "Austen"}})
 	books = append(books, Book{ID: "3", Isbn: "9782363071200", Title: "Commentarii de Bello Gallico", Author: &Author{Firstname: "Julius", Lastname: "Caesar"}})
+
+	lastID = books[len(books)-1].ID
+	fmt.Println(lastID)
 
 	// Route Handlers / Endpoints
 	r.HandleFunc("/api/books", getBooks).Methods("GET")
